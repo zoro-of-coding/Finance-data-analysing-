@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://finance.yahoo.com/quote/AAPL",
+    "longName": "Apple Inc.",
+    "regularMarketPrice": null,
+    "regularMarketChange": null,
+    "regularMarketChangePercent": null,
+    "regularMarketVolume": null
+  },
+  {
+    "url": "https://finance.yahoo.com/quote/MSFT",
+    "longName": "Microsoft Corporation",
+    "regularMarketPrice": null,
+    "regularMarketChange": null,
+    "regularMarketChangePercent": null,
+    "regularMarketVolume": null
+  },
+  {
+    "url": "https://finance.yahoo.com/quote/NVDA",
+    "longName": "NVIDIA Corporation",
+    "regularMarketPrice": null,
+    "regularMarketChange": null,
+    "regularMarketChangePercent": null,
+    "regularMarketVolume": null
+  }
+]

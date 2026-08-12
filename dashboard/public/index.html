@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Finance Scraper · Self-Healing Monitor</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">BD</span>
+      <div>
+        <h1>Finance Self-Healing Scraper</h1>
+        <p>Bright Data Scraper Studio · Yahoo Finance collector monitor</p>
+      </div>
+    </div>
+    <div id="status-pill" class="pill unknown">unknown</div>
+  </header>
+
+  <main>
+    <section class="cards" id="cards">
+      <div class="card"><div class="label">Last state</div><div id="lastState" class="value">-</div></div>
+      <div class="card"><div class="label">Rows captured</div><div id="totalRows" class="value">-</div></div>
+      <div class="card"><div class="label">Heal events</div><div id="healCount" class="value">-</div></div>
+      <div class="card"><div class="label">Broken events</div><div id="brokenCount" class="value">-</div></div>
+    </section>
+
+    <section class="panel">
+      <h2>Health timeline</h2>
+      <div id="timeline" class="timeline"></div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Quote prices <span class="sub">latest snapshot</span></h2>
+        <div id="prices"></div>
+      </div>
+      <div class="panel">
+        <h2>Price history <span class="sub">last 6 snapshots</span></h2>
+        <div id="sparklines"></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Top gainers</h2>
+        <div id="gainers" class="list"></div>
+      </div>
+      <div class="panel">
+        <h2>Top losers</h2>
+        <div id="losers" class="list"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>AI analyst <span class="sub">Llama 3.2-1B · local · grounded in scraped data</span></h2>
+      <div class="analyst-controls">
+        <input id="analyst-question" type="text" placeholder="Ask about the snapshot… e.g. Which ticker is strongest today?" />
+        <button id="analyst-btn">Analyze</button>
+      </div>
+      <div id="analyst-body" class="analyst-body">
+        <div id="analyst-text" class="analyst-text">Run an analysis to get a data-grounded take on the snapshot.</div>
+        <div id="analyst-meta" class="analyst-meta"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Scraper health checks</h2>
+      <div id="checks"></div>
+    </section>
+  </main>
+
+  <footer>
+    Self-healing pipeline · <code>bdata scraper heal</code> on detection · powered by Bright Data Scraper Studio
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+[
+  {
+    "symbol": "AAPL",
+    "longName": "Apple Inc.",
+    "currency": "USD",
+    "exchange": "NMS",
+    "quoteType": "EQUITY",
+    "regularMarketPrice": 234.98,
+    "regularMarketChange": 1.42,
+    "regularMarketChangePercent": 0.61,
+    "regularMarketVolume": 48200000,
+    "marketCap": 3520000000000,
+    "fiftyTwoWeekHigh": 260.1,
+    "fiftyTwoWeekLow": 164.08,
+    "regularMarketTime": 1723400000,
+    "url": "https://finance.yahoo.com/quote/AAPL"
+  },
+  {
+    "symbol": "MSFT",
+    "longName": "Microsoft Corporation",
+    "currency": "USD",
+    "exchange": "NMS",
+    "quoteType": "EQUITY",
+    "regularMarketPrice": 467.5,
+    "regularMarketChange": -2.35,
+    "regularMarketChangePercent": -0.5,
+    "regularMarketVolume": 19800000,
+    "marketCap": 3470000000000,
+    "fiftyTwoWeekHigh": 468.35,
+    "fiftyTwoWeekLow": 362.28,
+    "regularMarketTime": 1723400000,
+    "url": "https://finance.yahoo.com/quote/MSFT"
+  },
+  {
+    "symbol": "NVDA",
+    "longName": "NVIDIA Corporation",
+    "currency": "USD",
+    "exchange": "NMS",
+    "quoteType": "EQUITY",
+    "regularMarketPrice": 131.26,
+    "regularMarketChange": 3.88,
+    "regularMarketChangePercent": 3.04,
+    "regularMarketVolume": 210000000,
+    "marketCap": 3220000000000,
+    "fiftyTwoWeekHigh": 140.76,
+    "fiftyTwoWeekLow": 39.23,
+    "regularMarketTime": 1723400000,
+    "url": "https://finance.yahoo.com/quote/NVDA"
+  }
+]

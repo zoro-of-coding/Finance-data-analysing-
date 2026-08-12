@@ -1,0 +1,30 @@
+{
+  "name": "finance-self-healing-scraper",
+  "version": "1.0.0",
+  "description": "Self-healing Yahoo Finance data pipeline built on Bright Data Scraper Studio",
+  "type": "module",
+  "bin": {
+    "scrape-run": "./bin/run.js",
+    "scrape-daemon": "./bin/daemon.js",
+    "scrape-create-collector": "./scripts/create-collector.js"
+  },
+  "scripts": {
+    "start": "node bin/run.js",
+    "run": "node bin/run.js",
+    "daemon": "node bin/daemon.js",
+    "create-collector": "node scripts/create-collector.js",
+    "demo": "node scripts/demo-cycle.js",
+    "seed": "node scripts/seed-data.js",
+    "analyst": "node scripts/analyst.js",
+    "setup-llm": "python -m pip install -r llm/requirements.txt",
+    "dashboard": "node dashboard/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

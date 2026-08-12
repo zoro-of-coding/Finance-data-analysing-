@@ -1,0 +1,20 @@
+# Runtime data (history, status, snapshots, dashboard cache)
+data/
+*.log
+
+# Secrets
+.env
+.env.local
+
+# Node
+node_modules/
+
+# Local model weights (2.5 GB) — re-download or copy back after cloning.
+llama3.2-1b/
+llm/__pycache__/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
