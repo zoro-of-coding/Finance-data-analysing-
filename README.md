@@ -215,6 +215,7 @@ How it works:
 
 | Command                  | What it does                                                        |
 | ------------------------ | ------------------------------------------------------------------- |
+| `npm run app`            | Interactive terminal launcher — menu for every command below        |
 | `npm start` / `npm run`  | One full scrape → validate → heal → verify cycle                    |
 | `npm run daemon`         | Same cycle on a schedule (`DAEMON_INTERVAL_SECONDS`)                |
 | `npm run create-collector` | Build the Yahoo Finance collector via the Bright Data AI Agent    |
