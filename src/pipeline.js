@@ -1,15 +1,14 @@
 import { triggerCollector, fetchDataset } from "./brightdata.js";
-import { fetchRealtimeQuotes } from "./realtime.js";
 import { runHealing } from "./healer.js";
 import { validateRows } from "./validator.js";
-import { config } from "./config.js";
+import { config, requireCollector } from "./config.js";
 import { logger } from "./logger.js";
 import { PipelineError, ValidationFailure } from "./errors.js";
 import { appendCycle, writeStatus, saveSnapshot, loadLastSnapshot } from "./state.js";
 import { sendAlert, buildAlertPayload } from "./alert.js";
 import { buildInsights } from "./analytics.js";
 
-const defaultDeps = { triggerCollector, fetchDataset, runHealing, fetchRealtimeQuotes };
+const defaultDeps = { triggerCollector, fetchDataset, runHealing };
 
 const validatorOpts = () => ({
   requiredFields: config.requiredFields,
@@ -31,23 +30,15 @@ async function scrapeOnce(deps, collectorId) {
  */
 export async function runCycle(opts = {}) {
   const deps = { ...defaultDeps, ...(opts.deps || {}) };
-
-  // Use the free Yahoo chart API when no Bright Data collector is configured.
-  // A collector is still used (and healing still targets it) when creds exist.
-  const useRealtime = !(config.apiKey && config.collectorId);
+  requireCollector();
   const collectorId = config.collectorId;
-  const source = useRealtime
-    ? `Yahoo realtime (${config.inputs.length} URL(s))`
-    : `collector ${collectorId}`;
 
-  logger.info(`Cycle started: ${source}`, { inputs: config.inputs.length });
+  logger.info(`Cycle started for collector ${collectorId}`, { inputs: config.inputs.length });
 
   // ---- 1. Initial scrape ------------------------------------------------------
   let rows;
   try {
-    rows = useRealtime
-      ? await deps.fetchRealtimeQuotes(config.inputs)
-      : await scrapeOnce(deps, collectorId);
+    rows = await scrapeOnce(deps, collectorId);
   } catch (err) {
     const result = {
       state: "error",
@@ -73,43 +64,32 @@ export async function runCycle(opts = {}) {
       attempts++;
       logger.warn(`Heal attempt ${attempts}/${config.maxHealAttempts}`);
 
-      if (useRealtime) {
-        // No collector to heal — a realtime "heal" is a fresh fetch (retries
-        // transient network failures for individual symbols).
-        try {
-          rows = await deps.fetchRealtimeQuotes(config.inputs);
-        } catch (err) {
-          logger.error("Realtime re-fetch after heal failed", { error: err.message });
-          break;
-        }
-      } else {
-        let healOutcome;
-        try {
-          healOutcome = await deps.runHealing(collectorId, report, config.inputs);
-        } catch (err) {
-          logger.error("Healing threw", { error: err.message });
-          break;
-        }
+      let healOutcome;
+      try {
+        healOutcome = await deps.runHealing(collectorId, report, config.inputs);
+      } catch (err) {
+        logger.error("Healing threw", { error: err instanceof Error ? err.message : String(err) });
+        break;
+      }
 
-        if (!healOutcome.healed) {
-          const result = {
-            state: "awaiting_approval",
-            ts: new Date().toISOString(),
-            summary: healOutcome.reason,
-            totalRows: rows.length,
-            collectorId,
-            attempts,
-          };
-          persist(result, rows);
-          return result;
-        }
+      if (!healOutcome.healed) {
+        const result = {
+          state: "awaiting_approval",
+          ts: new Date().toISOString(),
+          summary: healOutcome.reason,
+          totalRows: rows.length,
+          collectorId,
+          attempts,
+        };
+        persist(result, rows);
+        return result;
+      }
 
-        try {
-          rows = await scrapeOnce(deps, collectorId);
-        } catch (err) {
-          logger.error("Re-scrape after heal failed", { error: err.message });
-          break;
-        }
+      try {
+        rows = await scrapeOnce(deps, collectorId);
+      } catch (err) {
+        logger.error("Re-scrape after heal failed", { error: err.message });
+        break;
       }
 
       report = validateRows(rows, validatorOpts());

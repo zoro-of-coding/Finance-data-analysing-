@@ -10,6 +10,9 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.error("Cycle failed", { error: err.message, code: err.code });
+  logger.error("Cycle failed", {
+    error: err instanceof Error ? err.message : String(err),
+    code: err?.code,
+  });
   process.exitCode = 1;
 });

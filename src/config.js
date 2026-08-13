@@ -48,10 +48,18 @@ export const config = {
   get inputs() {
     const quoteUrl = (s) => `https://finance.yahoo.com/quote/${s.toUpperCase()}`;
     const symbols = this.symbols.length ? this.symbols : ["AAPL", "MSFT", "NVDA"];
+    const seen = new Set();
     return [
       ...this.urls,
       ...symbols.map((s) => quoteUrl(s)),
-    ].map((url) => ({ url }));
+    ]
+      .map((url) => ({ url }))
+      .filter((input) => {
+        const key = input.url.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   },
 
   get autoHeal() {

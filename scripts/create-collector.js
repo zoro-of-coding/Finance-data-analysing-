@@ -14,9 +14,14 @@ const DEFAULT_PROMPT =
 const TARGET_URL = process.env.COLLECTOR_TARGET_URL || "https://finance.yahoo.com/quote/AAPL";
 const PROMPT = process.env.COLLECTOR_PROMPT || DEFAULT_PROMPT;
 
+function escapeShellArg(arg) {
+  return `"${String(arg).replace(/"/g, '\\"')}"`;
+}
+
 function run(cmd, args, timeoutMs = 30 * 60 * 1000) {
+  const full = [cmd, ...args.map(escapeShellArg)].join(" ");
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, {
+    const child = spawn(full, {
       shell: true,
       env: { ...process.env, BRIGHTDATA_API_KEY: process.env.BRIGHTDATA_API_KEY || "" },
       stdio: ["ignore", "pipe", "pipe"],

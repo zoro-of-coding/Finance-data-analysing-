@@ -1,6 +1,7 @@
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { ApiError } from "./errors.js";
+import { normalizeRows } from "./normalize.js";
 
 const BASE = "https://api.brightdata.com";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -55,41 +56,73 @@ async function request(path, { method = "GET", body, attempts = 4 } = {}) {
 }
 
 /**
- * Trigger the collector for a batch of inputs.
+ * Trigger an immediate (realtime) collection for each input URL.
+ *
+ * Uses /dca/trigger_immediate per URL and returns the response ids to poll.
+ * The batch /dca/trigger -> /dca/dataset path is avoided because fresh,
+ * AI-built collectors returned empty datasets there, while the immediate
+ * path reliably returns rows within seconds.
+ *
  * @param {string} collectorId c_...
  * @param {Array<object>} inputs  e.g. [{ url: "..." }]
- * @returns {Promise<string>} snapshot id (j_...)
+ * @returns {Promise<Array<string>>} response ids, one per input
  */
 export async function triggerCollector(collectorId, inputs) {
   const body = inputs && inputs.length ? inputs : config.inputs;
-  const res = await request(
-    `/dca/trigger?collector=${collectorId}&queue_next=1`,
-    { method: "POST", body }
-  );
-  if (!res?.collection_id) {
-    throw new ApiError("Trigger did not return a collection_id", 200, res);
+  const ids = [];
+  for (const input of body) {
+    const url = input.url;
+    if (!url) continue;
+    const res = await request(
+      `/dca/trigger_immediate?collector=${collectorId}`,
+      { method: "POST", body: { url } }
+    );
+    if (!res?.response_id) {
+      throw new ApiError("trigger_immediate did not return a response_id", 200, res);
+    }
+    ids.push(res.response_id);
   }
-  logger.info(`Triggered collector ${collectorId}, snapshot ${res.collection_id}`, {
-    inputs: body.length,
-  });
-  return res.collection_id;
+  if (!ids.length) throw new ApiError("No triggerable inputs", 200, null);
+  logger.info(`Triggered collector ${collectorId} (immediate, ${ids.length} inputs)`);
+  return ids;
 }
 
 /**
- * Fetch the dataset for a snapshot, polling until ready.
- * @returns {Promise<Array<object>>} result rows
+ * Fetch the dataset for immediate response ids, polling until ready.
+ * @param {Array<string>} responseIds
+ * @returns {Promise<Array<object>>} normalized result rows
  */
-export async function fetchDataset(snapshotId) {
+export async function fetchDataset(responseIds) {
   const deadline = Date.now() + config.pollTimeoutMs;
-  while (Date.now() < deadline) {
-    const data = await request(`/dca/dataset?id=${snapshotId}`);
-    if (Array.isArray(data)) {
-      logger.info(`Dataset ready (${data.length} rows)`);
-      return data;
+  const remaining = new Set(responseIds);
+  const rowsByInput = new Map();
+
+  while (remaining.size && Date.now() < deadline) {
+    for (const id of [...remaining]) {
+      const data = await request(`/dca/get_result?response_id=${encodeURIComponent(id)}`);
+      if (
+        Array.isArray(data) &&
+        data.length &&
+        !(data[0] && typeof data[0] === "object" && data[0].pending === true)
+      ) {
+        rowsByInput.set(id, data);
+        remaining.delete(id);
+      } else if (Array.isArray(data) && data.length === 0) {
+        // finished but empty for this URL
+        remaining.delete(id);
+      }
     }
-    await sleep(config.pollIntervalMs);
+    if (remaining.size) await sleep(config.pollIntervalMs);
   }
-  throw new ApiError(`Dataset poll timed out for snapshot ${snapshotId}`, 0, null);
+
+  if (remaining.size) {
+    throw new ApiError(`Dataset poll timed out for ${remaining.size}/${responseIds.length} inputs`, 0, null);
+  }
+
+  const raw = [...rowsByInput.values()].flat();
+  const rows = normalizeRows(raw);
+  logger.info(`Dataset ready (${rows.length} rows from ${responseIds.length} inputs)`);
+  return rows;
 }
 
 /**

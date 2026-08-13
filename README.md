@@ -3,13 +3,12 @@
 A self-healing web-data pipeline for Yahoo Finance quotes, built on
 [Bright Data Scraper Studio](https://brightdata.com) and its Self-Healing tool.
 
-**Two data sources** — pick based on your setup:
-
-- **Free & keyless (default):** `npm run app` → 1 (or `npm start`) pulls live
-  quotes straight from Yahoo's public chart API with **no API key or
-  collector** — it just works.
-- **Bright Data Scraper Studio:** set `BRIGHTDATA_API_KEY` + `COLLECTOR_ID` in
-  `.env` to get the full AI self-healing collector flow instead.
+**Bright Data is the data engine.** Every scrape cycle runs your collector
+through Bright Data's realtime API (`/dca/trigger_immediate`), pulls the rows it
+extracts, normalizes them, validates every field, and — when the site changes
+and data goes bad — triggers Scraper Studio's self-healing AI to rebuild the
+scraper, auto-approves the fix and re-verifies. Clean data then flows to a live
+dashboard and a local Llama 3.2-1B analyst.
 
 A scraper works at 9am. The site ships a redesign at 10am. By noon you're
 silently ingesting `null`s. This project closes that loop: it **runs the
@@ -31,36 +30,41 @@ that keeps it honest.
                   │  (collector c_..., built by the AI Agent)       │
                   └────────────────────────────────────────────────┘
                     ▲                        ▲                 │
-        POST /dca/trigger         heal + approve          dataset rows
+       POST /dca/trigger_immediate   heal + approve       get_result rows
                     │               (AI refactor)              ▼
     ┌───────────────┴───────────┐         │        ┌───────────────────┐
-    │   src/pipeline.js         │         │        │  src/validator.js │
-    │   scrape → validate       │─────────┘        │  row completeness │
-    │   → heal → re-verify      │                  │  schema drift     │
-    └───────────────────────────┘                  │  type checks      │
-              │                                    │  staleness (frozen)│
-              ▼                                    └───────────────────┘
-    ┌──────────────────────┐
-    │  data/  (history,    │   ──►  dashboard  ──►  /api/* + UI
-    │  snapshots, status)  │
+    │   src/pipeline.js         │         │        │  src/normalize.js │
+    │   trigger → poll →         │         │        │  nested {value}  │
+    │   validate → heal → verify │────────┘        │  → plain numbers  │
+    └───────────────────────────┘                  │  + validator.js   │
+              │                                    │  row completeness │
+              ▼                                    │  schema drift     │
+    ┌──────────────────────┐                       │  type checks      │
+    │  data/  (history,    │   ──►  dashboard  ──►  │  staleness (frozen)│
+    │  snapshots, status)  │                       └───────────────────┘
     └──────────────────────┘
 ```
 
 The cycle (`npm start`) is:
 
-1. **Scrape** — trigger the Scraper Studio collector for a set of Yahoo Finance quote URLs
-   and poll the snapshot until the rows are ready.
-2. **Validate** — every row is checked for missing required fields, low fill rate,
+1. **Scrape** — for each configured Yahoo Finance quote URL, `src/brightdata.js`
+   triggers the Scraper Studio collector over the **realtime API**
+   (`POST /dca/trigger_immediate`) and polls `GET /dca/get_result` until rows arrive.
+2. **Normalize** — the AI-built collector returns pretty shapes like
+   `regularMarketPrice: {value: 302.25}`, `regularMarketChangePercent: "(-2.26%)"`
+   and `marketCap: "3.657T"`. `src/normalize.js` flattens these into plain numbers
+   so the validator and dashboard can reason about them uniformly.
+3. **Validate** — every row is checked for missing required fields, low fill rate,
    wrong value types, non-positive prices, and **staleness** (all tracked fields byte-identical
    to the previous run = the scraper is serving a cached page).
-3. **Heal** — if validation fails, `src/healer.js` builds a targeted plain-language prompt
+4. **Heal** — if validation fails, `src/healer.js` builds a targeted plain-language prompt
    (under the 1000-char limit, naming the broken fields and symbols) and calls
    `POST /dca/collectors/{id}/refactor_template`. It polls progress and, with
    `AUTO_APPROVE=true`, resumes the job with `{"message": true, "auto_save": true}`.
    The Collector ID never changes, so nothing downstream breaks.
-4. **Re-verify** — the healed collector re-scrapes and the same validation runs again.
+5. **Re-verify** — the healed collector re-scrapes and the same validation runs again.
    State becomes `healed` only if the data is provably good now.
-5. **Persist + alert** — every cycle is appended to `data/history.jsonl`, the latest
+6. **Persist + alert** — every cycle is appended to `data/history.jsonl`, the latest
    snapshot is stored, `data/status.json` is rewritten, and a webhook alert fires on
    any non-healthy state.
 
@@ -98,18 +102,21 @@ Bright Data owns everything else about "scraping": proxies, IP rotation,
 anti-bot / CAPTCHA handling, JavaScript rendering and retries. Our code never
 touches a proxy or parses raw HTML.
 
-### 2. Run it — Collection API
+### 2. Run it — Realtime Collection API
 
-Each cycle triggers the collector for a batch of quote URLs:
+Each cycle triggers the collector for each quote URL over the **realtime API**,
+then polls for results:
 
 ```
-POST /dca/trigger?collector=c_...&queue_next=1        body: [{"url":"https://finance.yahoo.com/quote/AAPL"}, ...]
-GET  /dca/dataset?id=j_...        (poll every ~5s until it returns a JSON array)
+POST /dca/trigger_immediate?collector=c_...       body: {"url":"https://finance.yahoo.com/quote/AAPL"}
+GET  /dca/get_result?response_id=...              (poll until it returns a JSON array)
 ```
 
 The response is structured rows matching the collector's output schema — one row
-per quote, e.g. `{ symbol: "AAPL", regularMarketPrice: 234.98, ... }`. That
-structured JSON is exactly what our validator and the AI analyst consume.
+per quote. The AI-built collector returns pretty-printed values
+(`regularMarketPrice: {value: 302.25}`, `regularMarketChangePercent: "(-2.26%)"`,
+`marketCap: "3.657T"`), which `src/normalize.js` flattens into plain numbers so
+the validator, dashboard and analyst can use them directly.
 
 ### 3. Repair it — Self-Healing AI Flow
 
@@ -167,15 +174,39 @@ integration keeps working across a heal.
    # fill in BRIGHTDATA_API_KEY and COLLECTOR_ID
    ```
 
-4. **Run one cycle:**
-   ```bash
-   npm start
-   ```
+## Run it
 
-5. **Watch it live:**
-   ```bash
-   npm run dashboard      # http://localhost:4173
-   ```
+Get real Yahoo Finance quotes via Bright Data in three commands:
+
+```bash
+npm run app        # terminal launcher — pick options from the menu
+```
+
+or directly:
+
+```bash
+npm start          # one full scrape → validate → heal → verify cycle
+npm run dashboard  # live dashboard  http://localhost:4173  (LAN: http://<PC-IP>:4173)
+```
+
+The dashboard and the local AI analyst (below) read `data/` written by the last
+cycle, so you can run the scrape once and explore from any device on your network.
+
+### The launcher menu (`npm run app`)
+
+| Option | What it does |
+| ------ | ------------ |
+| 1 | Run a scrape cycle (Bright Data) |
+| 2 | AI analyst — ask the Llama 3.2-1B model a question |
+| 3 | Start the web dashboard |
+| 4 | Start the scheduled daemon (repeat cycles) |
+| 5 | Offline self-healing demo (no API calls) |
+| 6 | Seed demo data for a video/offline demo |
+| 7 | Show the latest cycle status |
+| 8 | Create a new collector (`npm run create-collector`) |
+| 9 | Quit |
+
+Ctrl+C stops a running tool and returns to the menu.
 
 ---
 
@@ -238,9 +269,9 @@ How it works:
 
 | Variable                    | Default               | Meaning                                              |
 | --------------------------- | --------------------- | ---------------------------------------------------- |
-| `BRIGHTDATA_API_KEY`        | —                     | API token (optional — leave empty for the free Yahoo realtime source) |
-| `COLLECTOR_ID`              | —                     | The `c_...` scraper handle (optional — same fallback)                |
-| `SCRAPE_SYMBOLS`            | `AAPL,MSFT,NVDA`      | Symbols to turn into quote URLs (this is also the default when `.env` has none) |
+| `BRIGHTDATA_API_KEY`        | —                     | API token from Bright Data Account Settings (required) |
+| `COLLECTOR_ID`              | —                     | The `c_...` scraper handle (required — from `npm run create-collector`) |
+| `SCRAPE_SYMBOLS`            | `AAPL,MSFT,NVDA`      | Symbols to turn into quote URLs (default when `.env` has none) |
 | `SCRAPE_URLS`               | —                     | Or provide full URLs directly                        |
 | `AUTO_HEAL`                 | `true`                | Run self-healing on validation failure               |
 | `AUTO_APPROVE`              | `true`                | Approve the AI's fix without a human gate            |
