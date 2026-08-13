@@ -3,6 +3,14 @@
 A self-healing web-data pipeline for Yahoo Finance quotes, built on
 [Bright Data Scraper Studio](https://brightdata.com) and its Self-Healing tool.
 
+**Two data sources** — pick based on your setup:
+
+- **Free & keyless (default):** `npm run app` → 1 (or `npm start`) pulls live
+  quotes straight from Yahoo's public chart API with **no API key or
+  collector** — it just works.
+- **Bright Data Scraper Studio:** set `BRIGHTDATA_API_KEY` + `COLLECTOR_ID` in
+  `.env` to get the full AI self-healing collector flow instead.
+
 A scraper works at 9am. The site ships a redesign at 10am. By noon you're
 silently ingesting `null`s. This project closes that loop: it **runs the
 collector, validates every row, detects breakage, triggers Scraper Studio's
@@ -230,9 +238,9 @@ How it works:
 
 | Variable                    | Default               | Meaning                                              |
 | --------------------------- | --------------------- | ---------------------------------------------------- |
-| `BRIGHTDATA_API_KEY`        | —                     | API token from Account Settings                      |
-| `COLLECTOR_ID`              | —                     | The `c_...` scraper handle                           |
-| `SCRAPE_SYMBOLS`            | `AAPL,MSFT,NVDA`      | Symbols to turn into quote URLs                      |
+| `BRIGHTDATA_API_KEY`        | —                     | API token (optional — leave empty for the free Yahoo realtime source) |
+| `COLLECTOR_ID`              | —                     | The `c_...` scraper handle (optional — same fallback)                |
+| `SCRAPE_SYMBOLS`            | `AAPL,MSFT,NVDA`      | Symbols to turn into quote URLs (this is also the default when `.env` has none) |
 | `SCRAPE_URLS`               | —                     | Or provide full URLs directly                        |
 | `AUTO_HEAL`                 | `true`                | Run self-healing on validation failure               |
 | `AUTO_APPROVE`              | `true`                | Approve the AI's fix without a human gate            |

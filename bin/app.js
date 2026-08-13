@@ -126,6 +126,8 @@ function runChild(args, label) {
 async function runScrapeCycle() {
   try {
     const { runCycle } = await import("../src/pipeline.js");
+    const source = config.apiKey && config.collectorId ? "Bright Data collector" : "Yahoo realtime (free, no key)";
+    console.log(`${DIM}source: ${source}${RESET}\n`);
     const result = await runCycle();
     const color = stateColor(result.state);
     console.log(`\n${color}── cycle: ${result.state} ──${RESET}`);
@@ -134,7 +136,7 @@ async function runScrapeCycle() {
     console.log(`\n${RED}── failed ──${RESET}`);
     console.log(`${err.message}`);
     if (err.message.includes("BRIGHTDATA_API_KEY") || err.message.includes("COLLECTOR_ID")) {
-      console.log(`${YELLOW}Tip:${RESET} option 8 creates the collector, then add your API key to .env.`);
+      console.log(`${YELLOW}Tip:${RESET} option 8 creates a collector, or leave creds unset to use the free Yahoo realtime source.`);
     }
   }
   await pause();

@@ -47,9 +47,10 @@ export const config = {
   },
   get inputs() {
     const quoteUrl = (s) => `https://finance.yahoo.com/quote/${s.toUpperCase()}`;
+    const symbols = this.symbols.length ? this.symbols : ["AAPL", "MSFT", "NVDA"];
     return [
       ...this.urls,
-      ...this.symbols.map((s) => quoteUrl(s)),
+      ...symbols.map((s) => quoteUrl(s)),
     ].map((url) => ({ url }));
   },
 
