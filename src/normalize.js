@@ -15,6 +15,13 @@
 
 const SUFFIX = { k: 1e3, m: 1e6, b: 1e9, t: 1e12 };
 
+/** Strip wrapping parens/spaces the collector sometimes adds, e.g. "(NVDA)". */
+function symbol(v) {
+  if (typeof v !== "string") return v ?? null;
+  const cleaned = v.trim().replace(/^\(+|\)+$/g, "");
+  return cleaned || null;
+}
+
 function num(v) {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (v === null || v === undefined) return null;
@@ -58,7 +65,7 @@ function timeSec(v) {
 /** one raw collector row -> flat row */
 export function normalizeRow(raw) {
   return {
-    symbol: raw.symbol ?? null,
+    symbol: symbol(raw.symbol),
     longName: raw.longName ?? raw.shortName ?? null,
     currency: raw.currency ?? null,
     exchange: raw.exchange ?? raw.exchangeName ?? null,

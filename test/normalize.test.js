@@ -39,6 +39,13 @@ test("normalizeRows maps every row", () => {
   assert.equal(rows[1].regularMarketPrice, null);
 });
 
+test("strips parens from symbol like the collector's \"(NVDA)\"", () => {
+  const row = normalizeRow({ symbol: "(NVDA)", regularMarketPrice: 224.09 });
+  assert.equal(row.symbol, "NVDA");
+  assert.equal(normalizeRow({ symbol: "  " }).symbol, null);
+  assert.equal(normalizeRow({}).symbol, null);
+});
+
 test("handles already-plain and missing values", () => {
   const row = normalizeRow({ symbol: "AAPL", regularMarketPrice: 302.25 });
   assert.equal(row.regularMarketPrice, 302.25);
