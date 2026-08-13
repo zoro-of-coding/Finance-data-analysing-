@@ -6,10 +6,12 @@
   "bin": {
     "scrape-run": "./bin/run.js",
     "scrape-daemon": "./bin/daemon.js",
-    "scrape-create-collector": "./scripts/create-collector.js"
+    "scrape-create-collector": "./scripts/create-collector.js",
+    "scrape-app": "./bin/app.js"
   },
   "scripts": {
     "start": "node bin/run.js",
+    "app": "node bin/app.js",
     "run": "node bin/run.js",
     "daemon": "node bin/daemon.js",
     "create-collector": "node scripts/create-collector.js",
