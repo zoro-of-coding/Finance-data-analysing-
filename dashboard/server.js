@@ -1,5 +1,6 @@
 import http from "node:http";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "../src/config.js";
@@ -98,8 +99,20 @@ function notFound(res) {
   res.end("Not found");
 }
 
-server.listen(config.dashboardPort, () => {
+function lanIP() {
+  const ifaces = os.networkInterfaces();
+  for (const name of Object.keys(ifaces)) {
+    for (const net of ifaces[name] || []) {
+      if (net.family === "IPv4" && !net.internal) return net.address;
+    }
+  }
+  return "localhost";
+}
+
+server.listen(config.dashboardPort, config.dashboardHost, () => {
+  const host = config.dashboardHost === "0.0.0.0" ? lanIP() : config.dashboardHost;
   console.log(`Dashboard: http://localhost:${config.dashboardPort}`);
+  console.log(`LAN access: http://${host}:${config.dashboardPort}`);
 });
 
 for (const signal of ["SIGINT", "SIGTERM"]) {

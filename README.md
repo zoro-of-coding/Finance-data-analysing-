@@ -242,6 +242,7 @@ How it works:
 | `ALERT_WEBHOOK_URL`         | —                     | Slack/Discord/Make-style webhook for status changes  |
 | `DAEMON_INTERVAL_SECONDS`   | `3600`                | Daemon cycle interval                                |
 | `DASHBOARD_PORT`            | `4173`                | Dashboard port                                       |
+| `DASHBOARD_HOST`            | `0.0.0.0`             | Bind host — `0.0.0.0` exposes it on the LAN         |
 
 ---
 

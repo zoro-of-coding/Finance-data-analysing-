@@ -89,6 +89,11 @@ export const config = {
   get dashboardPort() {
     return num(process.env.DASHBOARD_PORT, 4173);
   },
+  get dashboardHost() {
+    // "0.0.0.0" exposes the dashboard on the local network so any device on
+    // the same Wi-Fi can open it at http://<PC-LAN-IP>:<DASHBOARD_PORT>.
+    return process.env.DASHBOARD_HOST || "0.0.0.0";
+  },
 
   get pollIntervalMs() {
     return num(process.env.POLL_INTERVAL_MS, 5000);
