@@ -351,8 +351,9 @@ Phase 3: healed collector re-scrapes -> data healthy again
 
 ## Notes on the Bright Data APIs used
 
-- **Collection API**: `POST /dca/trigger` (with `queue_next=1`) → `GET /dca/dataset?id=…`
-  polls until a JSON array is returned.
+- **Realtime Collection API**: `POST /dca/trigger_immediate?collector={id}` (per
+  input URL) → `GET /dca/get_result?response_id=…` polls until a JSON array is
+  returned.
 - **AI Flow — Self-Healing**: `POST /dca/collectors/{id}/refactor_template` starts a
   refactor; `GET …/refactor_template/progress` is polled until `done` or
   `pending_answer`/`user_approval`; `POST …/resume_automation_job` with
