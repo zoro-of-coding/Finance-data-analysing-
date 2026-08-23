@@ -10,7 +10,7 @@ A self-healing web-data pipeline for Yahoo Finance quotes, built on
 ![Node](https://img.shields.io/badge/Node-18%2B-339933?style=flat-square&logo=node.js)
 ![Type](https://img.shields.io/badge/Type-ES%20Modules-0277bd?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![Hackathon](https://img.shields.io/badge/Into%20the%20Scrape--Verse-2025-ff6f00?style=flat-square)
+![Hackathon](https://img.shields.io/badge/Into%20the%20Scrape--Verse-2026-ff6f00?style=flat-square)
 
 **A self-healing web-data pipeline for Yahoo Finance quotes, built on [Bright Data Scraper Studio](https://brightdata.com) and its Self-Healing tool.**
 
