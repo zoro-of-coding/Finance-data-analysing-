@@ -2,6 +2,11 @@
 
 # 🏦 Finance Self-Healing Scraper
 
+https://github.com/user-attachments/assets/71091bee-d0d8-470b-ba27-1c133d3b2604
+
+A self-healing web-data pipeline for Yahoo Finance quotes, built on
+[Bright Data Scraper Studio](https://brightdata.com) and its Self-Healing tool.
+
 ![Node](https://img.shields.io/badge/Node-18%2B-339933?style=flat-square&logo=node.js)
 ![Type](https://img.shields.io/badge/Type-ES%20Modules-0277bd?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
